@@ -12,3 +12,7 @@ class ConflictException(DomainException):
 
 class ValidationDomainException(DomainException):
     pass
+
+
+class UnauthorizedException(DomainException):
+    pass
