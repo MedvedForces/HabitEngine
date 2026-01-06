@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_db_session
 from app.api.exception_handlers import domain_exception_handler
+from app.api.routers.analytics import router as analytics_router
 from app.api.routers.auth import router as auth_router
 from app.api.routers.check_ins import router as check_ins_router
 from app.api.routers.freezes import router as freezes_router
@@ -23,6 +24,7 @@ app.include_router(users_router)
 app.include_router(habits_router)
 app.include_router(check_ins_router)
 app.include_router(freezes_router)
+app.include_router(analytics_router)
 
 
 @app.get("/health", response_model=None)
