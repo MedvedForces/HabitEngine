@@ -16,8 +16,11 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.pool import NullPool
 
 from app.api import dependencies
+from app.api.dependencies import get_db_session
 from app.core.config import settings
 from app.main import app
+
+test_session_factory = None
 
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL",
@@ -39,8 +42,9 @@ async def create_test_database() -> None:
         await connection.close()
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session", loop_scope="session", autouse=True)
 async def prepare_test_database() -> AsyncGenerator[None, None]:
+    global test_session_factory
     await create_test_database()
     settings.database_url = TEST_DATABASE_URL
     alembic_config = Config("alembic.ini")
@@ -85,6 +89,12 @@ async def clean_database() -> AsyncGenerator[None, None]:
 
 @pytest_asyncio.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
+    async def override_db_session():
+        async with test_session_factory() as session:
+            yield session
+
+    app.dependency_overrides[get_db_session] = override_db_session
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as test_client:
         yield test_client
+    app.dependency_overrides.pop(get_db_session, None)
